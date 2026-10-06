@@ -1034,6 +1034,7 @@ function renderChart() {
 
   let labels = [];
   let dataHours = [];
+  let chartMeta = [];
 
   const userEntries = (!state.currentUser)
     ? []
@@ -1048,7 +1049,14 @@ function renderChart() {
     for (let i = 0; i < 7; i++) {
       const dateStr = formatDateToYYYYMMDD(curr);
       const dayName = DAY_NAMES_TR[curr.getDay()];
+      const dayNum = String(curr.getDate()).padStart(2, '0');
+      const monthNum = String(curr.getMonth() + 1).padStart(2, '0');
+      const yearNum = curr.getFullYear();
+
       labels.push(`${dayName} (${curr.getDate()}/${curr.getMonth() + 1})`);
+      chartMeta.push({
+        tooltipTitle: `📅 ${dayNum}.${monthNum}.${yearNum} - ${dayName}`
+      });
 
       const dayTotalSec = userEntries
         .filter(e => e.date === dateStr)
@@ -1064,7 +1072,15 @@ function renderChart() {
     for (let d = 1; d <= daysInMonth; d++) {
       const dateObj = new Date(now.getFullYear(), now.getMonth(), d);
       const dateStr = formatDateToYYYYMMDD(dateObj);
+      const dayName = DAY_NAMES_TR[dateObj.getDay()];
+      const dayNum = String(d).padStart(2, '0');
+      const monthNum = String(now.getMonth() + 1).padStart(2, '0');
+      const yearNum = now.getFullYear();
+
       labels.push(`${d}`);
+      chartMeta.push({
+        tooltipTitle: `📅 ${dayNum}.${monthNum}.${yearNum} - ${dayName}`
+      });
 
       const dayTotalSec = userEntries
         .filter(e => e.date === dateStr)
@@ -1111,11 +1127,18 @@ function renderChart() {
       plugins: {
         legend: { display: false },
         tooltip: {
+          padding: 10,
+          displayColors: false,
           callbacks: {
+            title: function (tooltipItems) {
+              if (!tooltipItems.length) return '';
+              const index = tooltipItems[0].dataIndex;
+              return chartMeta[index] ? chartMeta[index].tooltipTitle : tooltipItems[0].label;
+            },
             label: function (context) {
               const hoursDecimal = context.raw;
               const totalSec = Math.round(hoursDecimal * 3600);
-              return ` Toplam Süre: ${formatDurationDetailed(totalSec)}`;
+              return `⏱️ Toplam Süre: ${formatDurationDetailed(totalSec)}`;
             }
           }
         }
