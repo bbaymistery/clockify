@@ -1,5 +1,5 @@
 /* ==========================================================================
-   SaatTakip - Main Application Logic (3-Theme, Team Profiles & Pro Auth)
+   SaatTakip - Main Application Logic (Strict Logout Reset & Multi-User)
    ========================================================================== */
 
 const DAY_NAMES_TR = [
@@ -17,16 +17,16 @@ let state = {
   teamUsers: [],
   theme: localStorage.getItem('saattakip_theme') || 'dark',
   currentUser: JSON.parse(localStorage.getItem('saattakip_user') || 'null'),
-  authMode: 'login', // 'login', 'register', 'forgot'
+  authMode: 'login',
   useMongo: false,
   timer: {
     isRunning: false,
     seconds: 0,
     intervalId: null
   },
-  chartPeriod: 'week', // 'week' or 'month'
-  filterPeriod: 'this-week', // 'all', 'this-week', 'this-month'
-  userFilter: 'all', // 'all' or 'mine'
+  chartPeriod: 'week',
+  filterPeriod: 'this-week',
+  userFilter: 'all',
   searchQuery: '',
   sortField: 'date',
   sortOrder: 'desc'
@@ -47,7 +47,7 @@ async function init() {
     themeOptDark: document.getElementById('theme-opt-dark'),
     themeOptLight: document.getElementById('theme-opt-light'),
     themeOptMidnight: document.getElementById('theme-opt-midnight'),
-    
+
     // Auth
     userHeaderArea: document.getElementById('user-header-area'),
     btnOpenLogin: document.getElementById('btn-open-login'),
@@ -224,7 +224,7 @@ function getWeekRange(dateObj = new Date()) {
   const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
   const day = d.getDay();
   const diffToMonday = d.getDate() - day + (day === 0 ? -6 : 1);
-  
+
   const monday = new Date(d.setDate(diffToMonday));
   monday.setHours(0, 0, 0, 0);
 
@@ -243,6 +243,11 @@ function getMonthRange(dateObj = new Date()) {
 
 // --- Storage & MongoDB Sync ---
 async function loadEntries() {
+  if (!state.currentUser) {
+    state.entries = [];
+    return;
+  }
+
   const localSaved = localStorage.getItem('saattakip_entries');
   if (localSaved) {
     try {
@@ -277,7 +282,6 @@ async function loadTeamMembers() {
       }
     }
   } catch (e) {
-    // Construct team users list from entries fallback
     const userMap = new Map();
     state.entries.forEach(e => {
       const name = e.userName || 'Kullanıcı';
@@ -301,17 +305,16 @@ function renderTeamMembers() {
   if (!elements.teamMembersGrid) return;
 
   if (state.teamUsers.length === 0) {
-    // Show default demo cards for visual completeness
     state.teamUsers = [
-      { id: '1', name: 'Elgün', email: 'elgun@saattakip.com', avatarColor: '#6366f1' },
-      { id: '2', name: 'Kız Arkadaşım', email: 'partner@saattakip.com', avatarColor: '#ec4899' }
+
     ];
   }
 
   const todayStr = getTodayString();
 
   elements.teamMembersGrid.innerHTML = state.teamUsers.map(user => {
-    const userEntries = state.entries.filter(e => e.userEmail === user.email || e.userName === user.name);
+    // If not logged in, show 0s 0dk on cards or actual overview
+    const userEntries = state.currentUser ? state.entries.filter(e => e.userEmail === user.email || e.userName === user.name) : [];
     const todaySec = userEntries.filter(e => e.date === todayStr).reduce((sum, e) => sum + e.totalSeconds, 0);
 
     return `
@@ -321,7 +324,7 @@ function renderTeamMembers() {
         </div>
         <div class="user-card-info">
           <h4>${escapeHtml(user.name)}</h4>
-          <span>Bugün: <strong>${formatDuration(todaySec)}</strong></span>
+          <span>Bugün: <strong>${state.currentUser ? formatDuration(todaySec) : 'Gizli'}</strong></span>
         </div>
       </div>
     `;
@@ -387,7 +390,6 @@ async function handleAuthSubmit(e) {
   const password = elements.authPassword.value.trim();
   const confirmPassword = elements.authConfirmPassword ? elements.authConfirmPassword.value.trim() : '';
 
-  // Email format regex
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     showToast('Lütfen geçerli bir e-posta adresi girin (örn: isim@domain.com).', 'danger');
@@ -441,7 +443,6 @@ async function handleAuthSubmit(e) {
       showToast(data.message || 'Bir hata oluştu.', 'danger');
     }
   } catch (err) {
-    // Local offline fallback
     if (state.authMode === 'register' && password !== confirmPassword) {
       showToast('Şifreler eşleşmiyor.', 'danger');
       return;
@@ -461,12 +462,26 @@ async function handleAuthSubmit(e) {
   }
 }
 
+// --- STRICT LOGOUT & RESET ALL UI ---
 function handleLogout() {
   state.currentUser = null;
+  state.entries = [];
   localStorage.removeItem('saattakip_user');
+
+  // Reset live timer
+  resetTimer();
+
+  // Reset form input values
+  if (elements.entryHours) elements.entryHours.value = 0;
+  if (elements.entryMinutes) elements.entryMinutes.value = 0;
+  if (elements.entrySeconds) elements.entrySeconds.value = 0;
+  if (elements.entryNote) elements.entryNote.value = '';
+  if (elements.timerNote) elements.timerNote.value = '';
+
   renderUserHeader();
-  showToast('Çıkış yapıldı.', 'info');
+  renderTeamMembers();
   updateUI();
+  showToast('Çıkış yapıldı. Tüm veriler ve ekran sıfırlandı.', 'info');
 }
 
 function openAuthModal() {
@@ -517,7 +532,6 @@ function toggleAuthMode() {
 // --- User Profile Details View Modal ---
 function openMemberDetails(userName, userEmail) {
   if (!state.currentUser) {
-    // Show lock warning for unauthenticated guests!
     if (elements.lockWarningModal) elements.lockWarningModal.classList.remove('hidden');
     return;
   }
@@ -557,7 +571,7 @@ function openMemberDetails(userName, userEmail) {
   if (elements.userDetailsModal) elements.userDetailsModal.classList.remove('hidden');
 }
 
-// --- 3 Themes Handler (Koyu, Aydınlık, Midnight Gece Mavisi) ---
+// --- 3 Themes Handler ---
 function loadTheme() {
   document.body.classList.remove('dark-theme', 'light-theme', 'midnight-theme');
   document.body.classList.add(`${state.theme}-theme`);
@@ -574,7 +588,6 @@ function loadTheme() {
     if (elements.themeIconMoon) elements.themeIconMoon.classList.remove('hidden');
   }
 
-  // Update theme option active classes
   [elements.themeOptDark, elements.themeOptLight, elements.themeOptMidnight].forEach(opt => {
     if (opt) opt.classList.remove('active');
   });
@@ -589,7 +602,7 @@ function setTheme(themeName) {
   loadTheme();
   renderChart();
   if (elements.themeDropdown) elements.themeDropdown.classList.remove('show');
-  showToast(`${themeName === 'dark' ? 'Koyu Gece' : themeName === 'light' ? 'Aydınlık' : 'Gece Mavisi (Göz Yormayan)'} tema aktif.`, 'info');
+  showToast(`${themeName === 'dark' ? 'Koyu Gece' : themeName === 'light' ? 'Aydınlık' : 'Gece Mavisi'} tema aktif.`, 'info');
 }
 
 // --- Default Date Form Setup ---
@@ -601,7 +614,6 @@ function setupDateDefault() {
 
 // --- Event Listeners ---
 function setupEventListeners() {
-  // Theme dropdown & selection
   if (elements.themeToggleBtn) {
     elements.themeToggleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -613,7 +625,6 @@ function setupEventListeners() {
   if (elements.themeOptLight) elements.themeOptLight.addEventListener('click', () => setTheme('light'));
   if (elements.themeOptMidnight) elements.themeOptMidnight.addEventListener('click', () => setTheme('midnight'));
 
-  // Password Eye Toggles
   document.querySelectorAll('.btn-eye-toggle').forEach(btn => {
     btn.addEventListener('click', () => {
       const targetId = btn.dataset.for;
@@ -624,7 +635,6 @@ function setupEventListeners() {
     });
   });
 
-  // Auth Event Listeners
   if (elements.btnOpenLogin) elements.btnOpenLogin.addEventListener('click', openAuthModal);
   if (elements.btnAuthModalClose) elements.btnAuthModalClose.addEventListener('click', closeAuthModal);
   if (elements.btnToggleAuthMode) elements.btnToggleAuthMode.addEventListener('click', toggleAuthMode);
@@ -632,7 +642,6 @@ function setupEventListeners() {
   if (elements.authForm) elements.authForm.addEventListener('submit', handleAuthSubmit);
   if (elements.btnLogout) elements.btnLogout.addEventListener('click', handleLogout);
 
-  // Lock Modal Listeners
   if (elements.btnLockClose) elements.btnLockClose.addEventListener('click', () => elements.lockWarningModal.classList.add('hidden'));
   if (elements.btnLockLogin) {
     elements.btnLockLogin.addEventListener('click', () => {
@@ -641,10 +650,8 @@ function setupEventListeners() {
     });
   }
 
-  // User Details Modal Close
   if (elements.btnUserModalClose) elements.btnUserModalClose.addEventListener('click', () => elements.userDetailsModal.classList.add('hidden'));
 
-  // Team Member Card Clicks
   if (elements.teamMembersGrid) {
     elements.teamMembersGrid.addEventListener('click', (e) => {
       const userCard = e.target.closest('.user-card-item');
@@ -665,6 +672,11 @@ function setupEventListeners() {
   if (elements.addForm) {
     elements.addForm.addEventListener('submit', (e) => {
       e.preventDefault();
+      if (!state.currentUser) {
+        showToast('Çalışma kaydı eklemek için lütfen önce Giriş Yapın.', 'danger');
+        openAuthModal();
+        return;
+      }
       handleAddEntry();
     });
   }
@@ -696,7 +708,16 @@ function setupEventListeners() {
     });
   }
 
-  if (elements.timerToggleBtn) elements.timerToggleBtn.addEventListener('click', toggleTimer);
+  if (elements.timerToggleBtn) {
+    elements.timerToggleBtn.addEventListener('click', () => {
+      if (!state.currentUser && !state.timer.isRunning) {
+        showToast('Kronometre başlatmak için lütfen önce Giriş Yapın.', 'danger');
+        openAuthModal();
+        return;
+      }
+      toggleTimer();
+    });
+  }
   if (elements.timerResetBtn) elements.timerResetBtn.addEventListener('click', resetTimer);
 
   if (elements.chartTabWeek) {
@@ -809,13 +830,13 @@ function toggleTimer() {
   if (state.timer.isRunning) {
     clearInterval(state.timer.intervalId);
     state.timer.isRunning = false;
-    
+
     const totalSec = state.timer.seconds;
     if (totalSec > 0) {
       const h = Math.floor(totalSec / 3600);
       const m = Math.floor((totalSec % 3600) / 60);
       const s = totalSec % 60;
-      
+
       const newEntry = {
         id: 'entry_' + Date.now(),
         userId: state.currentUser ? state.currentUser.id : null,
@@ -835,7 +856,7 @@ function toggleTimer() {
       state.entries.unshift(newEntry);
       saveEntries(newEntry, 'add');
       showToast(`Kronometre süresi (${formatDurationDetailed(totalSec)}) kaydedildi!`, 'success');
-      
+
       if (typeof confetti === 'function') {
         confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
       }
@@ -928,11 +949,12 @@ function updateUI() {
   renderTable();
 }
 
-// --- Calculate Statistics ---
+// --- Calculate Statistics (STRICT ZERO WHEN LOGGED OUT OR EMPTY) ---
 function calculateStats() {
   if (!elements.statWeeklyTotal) return;
 
-  if (!state.entries || state.entries.length === 0) {
+  // IF USER IS LOGGED OUT OR ENTRIES EMPTY -> STRICT ZERO RESET!
+  if (!state.currentUser || !state.entries || state.entries.length === 0) {
     elements.statWeeklyTotal.textContent = '0s 0dk';
     elements.statWeeklyAvg.textContent = '0s 0dk / gün';
     elements.statMonthlyTotal.textContent = '0s 0dk';
@@ -957,7 +979,12 @@ function calculateStats() {
   let totalOverallSeconds = 0;
   const overallDaysSet = new Set();
 
-  state.entries.forEach(entry => {
+  // Filter stats for current logged-in user or active selection
+  const userEntries = state.userFilter === 'mine'
+    ? state.entries.filter(e => e.userEmail === state.currentUser.email || e.userId === state.currentUser.id)
+    : state.entries;
+
+  userEntries.forEach(entry => {
     const entryDate = parseEntryDate(entry.date);
     totalOverallSeconds += entry.totalSeconds;
     overallDaysSet.add(entry.date);
@@ -1008,6 +1035,12 @@ function renderChart() {
   let labels = [];
   let dataHours = [];
 
+  const userEntries = (!state.currentUser)
+    ? []
+    : (state.userFilter === 'mine'
+      ? state.entries.filter(e => e.userEmail === state.currentUser.email || e.userId === state.currentUser.id)
+      : state.entries);
+
   if (state.chartPeriod === 'week') {
     const weekRange = getWeekRange(now);
     const curr = new Date(weekRange.start);
@@ -1017,7 +1050,7 @@ function renderChart() {
       const dayName = DAY_NAMES_TR[curr.getDay()];
       labels.push(`${dayName} (${curr.getDate()}/${curr.getMonth() + 1})`);
 
-      const dayTotalSec = state.entries
+      const dayTotalSec = userEntries
         .filter(e => e.date === dateStr)
         .reduce((sum, e) => sum + e.totalSeconds, 0);
 
@@ -1033,7 +1066,7 @@ function renderChart() {
       const dateStr = formatDateToYYYYMMDD(dateObj);
       labels.push(`${d}`);
 
-      const dayTotalSec = state.entries
+      const dayTotalSec = userEntries
         .filter(e => e.date === dateStr)
         .reduce((sum, e) => sum + e.totalSeconds, 0);
 
@@ -1079,7 +1112,7 @@ function renderChart() {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: function(context) {
+            label: function (context) {
               const hoursDecimal = context.raw;
               const totalSec = Math.round(hoursDecimal * 3600);
               return ` Toplam Süre: ${formatDurationDetailed(totalSec)}`;
@@ -1109,6 +1142,18 @@ function renderChart() {
 // --- Render Table ---
 function renderTable() {
   if (!elements.tableBody) return;
+
+  // IF USER IS LOGGED OUT -> SHOW LOCKED EMPTY STATE
+  if (!state.currentUser) {
+    elements.tableBody.innerHTML = '';
+    if (elements.tableFilteredTotal) elements.tableFilteredTotal.textContent = '0s 0dk 0sn';
+    if (elements.emptyState) {
+      elements.emptyState.classList.remove('hidden');
+      elements.emptyState.querySelector('h4').textContent = 'Giriş Yapılmadı';
+      elements.emptyState.querySelector('p').textContent = 'Çalışma saatlerinizi görmek ve yeni süre eklemek için lütfen giriş yapın.';
+    }
+    return;
+  }
 
   const now = new Date();
   const weekRange = getWeekRange(now);
@@ -1159,7 +1204,11 @@ function renderTable() {
 
   if (filtered.length === 0) {
     elements.tableBody.innerHTML = '';
-    if (elements.emptyState) elements.emptyState.classList.remove('hidden');
+    if (elements.emptyState) {
+      elements.emptyState.classList.remove('hidden');
+      elements.emptyState.querySelector('h4').textContent = 'Henüz çalışma kaydı bulunmuyor';
+      elements.emptyState.querySelector('p').textContent = 'Yukarıdaki formdan manuel süre ekleyebilir veya canlı kronometreyi kullanabilirsiniz.';
+    }
     return;
   } else {
     if (elements.emptyState) elements.emptyState.classList.add('hidden');
@@ -1294,7 +1343,7 @@ function importJSON(e) {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = function(event) {
+  reader.onload = function (event) {
     try {
       const imported = JSON.parse(event.target.result);
       if (Array.isArray(imported)) {
@@ -1329,7 +1378,7 @@ function loadSampleData() {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const dateStr = formatDateToYYYYMMDD(d);
-    
+
     if (d.getDay() === 0) continue;
 
     const h = 6 + (i % 3);
@@ -1349,7 +1398,7 @@ function loadSampleData() {
     sampleEntries.push({
       id: 'sample_' + i,
       userId: state.currentUser ? state.currentUser.id : null,
-      userName: state.currentUser ? state.currentUser.name : (i % 2 === 0 ? 'Elgün' : 'Kız Arkadaşım'),
+      userName: state.currentUser ? state.currentUser.name : "",
       userEmail: state.currentUser ? state.currentUser.email : null,
       date: dateStr,
       dayName: getDayNameTR(dateStr),
@@ -1373,7 +1422,7 @@ function loadSampleData() {
 
 // --- Utilities ---
 function escapeHtml(str) {
-  return str.replace(/[&<>'"]/g, 
+  return str.replace(/[&<>'"]/g,
     tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
   );
 }
