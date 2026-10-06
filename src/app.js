@@ -136,7 +136,6 @@ async function init() {
     // Data Menu Dropdown
     btnDataMenu: document.getElementById('btn-data-menu'),
     dataDropdown: document.getElementById('data-dropdown'),
-    btnQuickSample: document.getElementById('btn-quick-sample'),
     btnExportJson: document.getElementById('btn-export-json'),
     btnExportCsv: document.getElementById('btn-export-csv'),
     importFileInput: document.getElementById('import-file-input'),
@@ -808,12 +807,7 @@ function setupEventListeners() {
     }
   });
 
-  if (elements.btnQuickSample) {
-    elements.btnQuickSample.addEventListener('click', () => {
-      if (elements.dataDropdown) elements.dataDropdown.classList.remove('show');
-      loadSampleData();
-    });
-  }
+
 
   if (elements.btnExportJson) elements.btnExportJson.addEventListener('click', exportJSON);
   if (elements.btnExportCsv) elements.btnExportCsv.addEventListener('click', exportCSV);
@@ -1392,56 +1386,7 @@ function clearAllEntries() {
   }
 }
 
-// --- Sample Data Loader ---
-function loadSampleData() {
-  const today = new Date();
-  const sampleEntries = [];
 
-  for (let i = 0; i < 10; i++) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const dateStr = formatDateToYYYYMMDD(d);
-
-    if (d.getDay() === 0) continue;
-
-    const h = 6 + (i % 3);
-    const m = (i * 12) % 60;
-    const s = (i * 7) % 60;
-    const totalSec = (h * 3600) + (m * 60) + s;
-
-    const categories = ['Yazılım / Proje', 'Genel Çalışma', 'Toplantı', 'Tasarım', 'Araştırma'];
-    const notes = [
-      'Frontend geliştirmeleri ve arayüz optimizasyonu',
-      'Müşteri toplantısı ve gereksinim analizi',
-      'Veritabanı tasarımı ve API entegrasyonu',
-      'Haftalık planlama ve kod incelemesi',
-      'Bileşen tasarımı ve responsive testler'
-    ];
-
-    sampleEntries.push({
-      id: 'sample_' + i,
-      userId: state.currentUser ? state.currentUser.id : null,
-      userName: state.currentUser ? state.currentUser.name : "",
-      userEmail: state.currentUser ? state.currentUser.email : null,
-      date: dateStr,
-      dayName: getDayNameTR(dateStr),
-      hours: h,
-      minutes: m,
-      seconds: s,
-      totalSeconds: totalSec,
-      category: categories[i % categories.length],
-      note: notes[i % notes.length],
-      createdAt: new Date().toISOString()
-    });
-  }
-
-  state.entries = sampleEntries;
-  saveEntries();
-  showToast('Örnek veriler yüklendi!', 'success');
-  if (typeof confetti === 'function') {
-    confetti({ particleCount: 50, spread: 60 });
-  }
-}
 
 // --- Utilities ---
 function escapeHtml(str) {
