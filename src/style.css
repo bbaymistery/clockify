@@ -1,5 +1,5 @@
 /* ==========================================================================
-   SaatTakip - CSS Design System & Responsive Styles (Perfected)
+   SaatTakip - CSS Design System & Responsive Styles (3-Theme & Team Directory)
    ========================================================================== */
 
 :root {
@@ -56,6 +56,25 @@ body.light-theme {
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.08);
   --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+}
+
+/* 3rd Theme: Midnight Gece Mavisi (Göz Yormayan Slate/Teal) */
+body.midnight-theme {
+  --bg-main: #0f172a;
+  --bg-card: rgba(30, 41, 59, 0.92);
+  --bg-card-hover: #334155;
+  --bg-input: #1e293b;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(14, 165, 233, 0.3);
+
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --accent-primary: #0ea5e9;
+  --accent-primary-hover: #0284c7;
+  --accent-secondary: #14b8a6;
+  --shadow-glow: 0 0 25px rgba(14, 165, 233, 0.2);
 }
 
 /* Reset & Global Base */
@@ -117,8 +136,8 @@ body {
 }
 
 .brand-icon {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   display: flex;
@@ -131,7 +150,7 @@ body {
 
 .brand-text h1 {
   font-family: var(--font-heading);
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;
@@ -149,8 +168,79 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
+
+/* User Badge / Profile in Header */
+.user-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid var(--border-color);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.user-avatar.lg {
+  width: 44px;
+  height: 44px;
+  font-size: 1.2rem;
+}
+
+/* Theme Toggle Button & Selector Dots */
+.btn-theme-toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.btn-theme-toggle:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  transform: scale(1.05);
+}
+
+.btn-theme-toggle svg {
+  width: 22px;
+  height: 22px;
+}
+
+.theme-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+.theme-dot.dark { background: #6366f1; }
+.theme-dot.light { background: #f59e0b; }
+.theme-dot.midnight { background: #0ea5e9; }
 
 /* Dropdown Menu */
 .dropdown {
@@ -161,7 +251,7 @@ body {
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
-  width: 210px;
+  width: 230px;
   background: var(--bg-card);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border-color);
@@ -196,6 +286,12 @@ body {
   transition: background var(--transition-fast);
 }
 
+.dropdown-menu button.active {
+  background: rgba(99, 102, 241, 0.18);
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
 .dropdown-menu button:hover,
 .dropdown-item-label:hover {
   background: rgba(99, 102, 241, 0.15);
@@ -211,6 +307,96 @@ body {
   height: 1px;
   background: var(--border-color);
   margin: 4px 0;
+}
+
+/* Team Directory Grid */
+.team-card {
+  margin-bottom: 4px;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.user-card-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.user-card-item:hover {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+}
+
+.user-card-info h4 {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.user-card-info span {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  display: block;
+}
+
+/* Password Eye Toggle Field */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  padding-right: 36px;
+}
+
+.btn-eye-toggle {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast);
+}
+
+.btn-eye-toggle:hover {
+  color: var(--text-primary);
+}
+
+.auth-extra-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.btn-text-link {
+  background: transparent;
+  border: none;
+  color: var(--accent-primary);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.btn-text-link:hover {
+  text-decoration: underline;
 }
 
 /* Main Content Layout */
@@ -704,6 +890,18 @@ body.light-theme .timer-display {
   opacity: 0.7;
 }
 
+.user-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-secondary);
+  background: rgba(6, 182, 212, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 .data-table tbody tr {
   transition: background var(--transition-fast);
 }
@@ -831,11 +1029,61 @@ body.light-theme .timer-display {
   animation: modalSlideIn 0.2s ease-out;
 }
 
+.modal-card.modal-lg {
+  max-width: 600px;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+}
+
+.user-modal-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-stats-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.user-mini-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.user-mini-stat span {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.user-mini-stat strong {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--accent-primary);
+}
+
+.lock-icon-container {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-warning);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
 }
 
 .modal-actions {
@@ -905,10 +1153,7 @@ body.light-theme .timer-display {
   margin-top: 2px;
 }
 
-/* ==========================================================================
-   BREAKPOINTS FOR PERFECT RESPONSIVENESS
-   ========================================================================== */
-
+/* BREAKPOINTS FOR RESPONSIVENESS */
 @media (max-width: 992px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);

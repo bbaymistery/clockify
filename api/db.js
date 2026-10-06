@@ -2,13 +2,6 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
-  console.warn('⚠️ MONGODB_URI environment variable is not defined.');
-}
-
-/**
- * Global connection cache for Serverless environment (Vercel)
- */
 let cached = global.mongoose;
 
 if (!cached) {
@@ -44,8 +37,22 @@ export async function connectToDatabase() {
   return cached.conn;
 }
 
-// Mongoose Schema for Work Entry
+// User Schema
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  password: { type: String, required: true },
+  avatarColor: { type: String, default: '#6366f1' },
+  createdAt: { type: Date, default: Date.now }
+});
+
+export const UserModel = mongoose.models.User || mongoose.model('User', userSchema);
+
+// Work Entry Schema (with User tracking for girlfriend & partner sharing!)
 const entrySchema = new mongoose.Schema({
+  userId: { type: String, required: false },
+  userName: { type: String, required: false },
+  userEmail: { type: String, required: false },
   date: { type: String, required: true },
   dayName: { type: String, required: true },
   hours: { type: Number, default: 0 },

@@ -1,7 +1,6 @@
 import { connectToDatabase, EntryModel } from './db.js';
 
 export default async function handler(req, res) {
-  // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -31,6 +30,9 @@ export default async function handler(req, res) {
         const entries = await EntryModel.find({}).sort({ date: -1, createdAt: -1 });
         const mapped = entries.map(doc => ({
           id: doc._id.toString(),
+          userId: doc.userId || null,
+          userName: doc.userName || null,
+          userEmail: doc.userEmail || null,
           date: doc.date,
           dayName: doc.dayName,
           hours: doc.hours,
@@ -45,8 +47,11 @@ export default async function handler(req, res) {
       }
 
       case 'POST': {
-        const { date, dayName, hours, minutes, seconds, totalSeconds, category, note } = body;
+        const { userId, userName, userEmail, date, dayName, hours, minutes, seconds, totalSeconds, category, note } = body;
         const newDoc = await EntryModel.create({
+          userId: userId || null,
+          userName: userName || null,
+          userEmail: userEmail || null,
           date,
           dayName,
           hours: hours || 0,
@@ -60,6 +65,9 @@ export default async function handler(req, res) {
           success: true,
           data: {
             id: newDoc._id.toString(),
+            userId: newDoc.userId,
+            userName: newDoc.userName,
+            userEmail: newDoc.userEmail,
             date: newDoc.date,
             dayName: newDoc.dayName,
             hours: newDoc.hours,
@@ -84,6 +92,9 @@ export default async function handler(req, res) {
           success: true,
           data: {
             id: updated._id.toString(),
+            userId: updated.userId,
+            userName: updated.userName,
+            userEmail: updated.userEmail,
             date: updated.date,
             dayName: updated.dayName,
             hours: updated.hours,

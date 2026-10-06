@@ -37,10 +37,26 @@
         </div>
 
         <div class="header-actions">
+          <!-- User Profile / Auth Area -->
+          <div id="user-header-area">
+            <button id="btn-open-login" class="btn btn-primary btn-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+              <span>Giriş Yap</span>
+            </button>
+            <div id="user-profile-badge" class="user-profile-badge hidden">
+              <div id="user-avatar" class="user-avatar">A</div>
+              <span id="user-display-name">Kullanıcı</span>
+              <button id="btn-logout" class="btn-action-icon danger" title="Çıkış Yap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Data Settings Dropdown -->
           <div class="dropdown">
             <button id="btn-data-menu" class="btn btn-secondary btn-header-action" title="Veri & Ayarlar">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-              <span class="header-btn-text">Veri & Ayarlar</span>
+              <span class="header-btn-text">Ayarlar</span>
             </button>
             <div id="data-dropdown" class="dropdown-menu">
               <button id="btn-quick-sample">
@@ -69,16 +85,41 @@
             </div>
           </div>
 
-          <button id="btn-theme-toggle" class="btn btn-icon" title="Tema Değiştir">
-            <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-            <svg id="theme-icon-sun" class="hidden" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-          </button>
+          <!-- 3-THEME TOGGLE BUTTON -->
+          <div class="dropdown">
+            <button id="btn-theme-toggle" class="btn-theme-toggle" title="Tema Değiştir (Koyu / Aydınlık / Gece Mavisi)">
+              <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+              <svg id="theme-icon-sun" class="hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+              <svg id="theme-icon-midnight" class="hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </button>
+            <div id="theme-dropdown" class="dropdown-menu">
+              <button id="theme-opt-dark" class="active"><span class="theme-dot dark"></span> 🌙 Koyu Gece (Varsayılan)</button>
+              <button id="theme-opt-light"><span class="theme-dot light"></span> ☀️ Aydınlık Tema</button>
+              <button id="theme-opt-midnight"><span class="theme-dot midnight"></span> 🌌 Gece Mavisi (Göz Yormayan)</button>
+            </div>
+          </div>
         </div>
       </div>
     </header>
 
     <!-- Main Content Area -->
     <main class="main-content container">
+
+      <!-- Team Members Directory Section -->
+      <section class="card team-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Ekip Üyeleri & Kullanıcılar
+            </h3>
+            <span class="card-subtitle">Üye çalışma detaylarını görmek için profile tıklayın</span>
+          </div>
+        </div>
+        <div id="team-members-grid" class="team-grid">
+          <!-- Dynamic Team Member Cards via JavaScript -->
+        </div>
+      </section>
 
       <!-- Hero Banner / Quick Live Timer -->
       <section class="timer-banner-card">
@@ -292,6 +333,11 @@
 
           <!-- Filters -->
           <div class="table-filter-bar">
+            <select id="table-filter-user" class="form-select form-select-sm">
+              <option value="all">Tüm Kullanıcılar (Ortak)</option>
+              <option value="mine">Sadece Benim Kayıtlarım</option>
+            </select>
+
             <div class="search-box">
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
               <input type="text" id="table-search" placeholder="Not veya kategori ara..." />
@@ -311,6 +357,7 @@
                 <th class="sortable" data-sort="date">
                   Tarih & Gün <span class="sort-icon">⇅</span>
                 </th>
+                <th>Kullanıcı</th>
                 <th>Kategori</th>
                 <th>Açıklama / Not</th>
                 <th class="sortable text-right" data-sort="duration">
@@ -324,7 +371,7 @@
             </tbody>
             <tfoot>
               <tr class="table-summary-row">
-                <td colspan="3"><strong>Filtrelenen Toplam Süre:</strong></td>
+                <td colspan="4"><strong>Filtrelenen Toplam Süre:</strong></td>
                 <td class="text-right"><strong id="table-filtered-total">0s 0dk 0sn</strong></td>
                 <td></td>
               </tr>
@@ -348,10 +395,132 @@
     <footer class="app-footer">
       <div class="container footer-content">
         <p>SaatTakip &copy; 2026 - Kolay ve Hızlı Çalışma Saati Takip Uygulaması</p>
-        <p class="footer-hint">Vercel Uyumlu &bull; Yerel Veri Depolama (LocalStorage)</p>
+        <p class="footer-hint">MongoDB Atlas & Vercel Uyumlu &bull; Ortak Kullanım Desteği</p>
       </div>
     </footer>
 
+  </div>
+
+  <!-- PRO AUTH MODAL (Login / Register / Confirm Password / Password Reset / Eye Toggle) -->
+  <div id="auth-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="auth-modal-title">Giriş Yap</h3>
+        <button id="btn-auth-modal-close" class="btn-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="auth-form">
+        <div id="auth-name-group" class="form-group hidden">
+          <label for="auth-name">Adınız / İsim</label>
+          <input type="text" id="auth-name" class="form-input" placeholder="Örn: Ahmet veya Ayşe" />
+        </div>
+
+        <div class="form-group">
+          <label for="auth-email">E-Posta Adresi <span class="hint-text">(örn: isim@domain.com)</span></label>
+          <input type="email" id="auth-email" class="form-input" placeholder="ornek@domain.com" required />
+        </div>
+
+        <div id="auth-password-group" class="form-group">
+          <label for="auth-password">Şifre</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="auth-password" class="form-input" placeholder="••••••••" required />
+            <button type="button" class="btn-eye-toggle" data-for="auth-password" title="Şifreyi Göster/Gizle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="auth-confirm-group" class="form-group hidden">
+          <label for="auth-confirm-password">Şifre Tekrarı</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="auth-confirm-password" class="form-input" placeholder="••••••••" />
+            <button type="button" class="btn-eye-toggle" data-for="auth-confirm-password" title="Şifreyi Göster/Gizle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="auth-extra-row">
+          <button type="button" id="btn-forgot-password" class="btn-text-link">Şifremi Unuttum?</button>
+        </div>
+
+        <div class="modal-actions" style="justify-content: space-between; align-items: center; margin-top: 14px;">
+          <button type="button" id="btn-toggle-auth-mode" class="btn btn-secondary btn-sm">Hesabınız yok mu? Kaydolun</button>
+          <button type="submit" id="btn-auth-submit" class="btn btn-primary">Giriş Yap</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- User Details View Modal (Shows specific member's stats) -->
+  <div id="user-details-modal" class="modal-backdrop hidden">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div class="user-modal-header-info">
+          <div id="user-modal-avatar" class="user-avatar lg">A</div>
+          <div>
+            <h3 id="user-modal-name">Kullanıcı Profili</h3>
+            <span id="user-modal-email" class="card-subtitle">email@domain.com</span>
+          </div>
+        </div>
+        <button id="btn-user-modal-close" class="btn-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <div id="user-modal-content">
+        <!-- User detailed stats summary -->
+        <div class="user-stats-summary-grid">
+          <div class="user-mini-stat">
+            <span>Bugün</span>
+            <strong id="user-modal-today-total">0s 0dk</strong>
+          </div>
+          <div class="user-mini-stat">
+            <span>Dün</span>
+            <strong id="user-modal-yesterday-total">0s 0dk</strong>
+          </div>
+          <div class="user-mini-stat">
+            <span>Toplam Süre</span>
+            <strong id="user-modal-overall-total">0s 0dk</strong>
+          </div>
+        </div>
+
+        <div class="table-responsive" style="margin-top: 16px; max-height: 260px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tarih & Gün</th>
+                <th>Kategori</th>
+                <th>Not</th>
+                <th class="text-right">Süre</th>
+              </tr>
+            </thead>
+            <tbody id="user-modal-table-body">
+              <!-- User specific entries -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lock Warning Modal (For Unauthenticated Guests) -->
+  <div id="lock-warning-modal" class="modal-backdrop hidden">
+    <div class="modal-card text-center" style="max-width: 380px;">
+      <div class="lock-icon-container">
+        <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h3 style="margin-top: 10px;">Üye Girişi Gereklidir</h3>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 10px 0 20px;">
+        Ekip üyelerinin detaylı çalışma raporlarını ve profillerini görmek için lütfen giriş yapın veya ücretsiz kaydolun.
+      </p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="btn-lock-close" class="btn btn-secondary">Kapat</button>
+        <button id="btn-lock-login" class="btn btn-primary">Giriş Yap / Kaydol</button>
+      </div>
+    </div>
   </div>
 
   <!-- Edit Entry Modal -->

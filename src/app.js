@@ -1,8 +1,7 @@
 /* ==========================================================================
-   SaatTakip - Main Application Logic (DOM-Safe & Bulletproof Stats)
+   SaatTakip - Main Application Logic (3-Theme, Team Profiles & Pro Auth)
    ========================================================================== */
 
-// --- Turkish Day Names Helper ---
 const DAY_NAMES_TR = [
   'Pazar',
   'Pazartesi',
@@ -13,10 +12,12 @@ const DAY_NAMES_TR = [
   'Cumartesi'
 ];
 
-// --- State ---
 let state = {
   entries: [],
+  teamUsers: [],
   theme: localStorage.getItem('saattakip_theme') || 'dark',
+  currentUser: JSON.parse(localStorage.getItem('saattakip_user') || 'null'),
+  authMode: 'login', // 'login', 'register', 'forgot'
   useMongo: false,
   timer: {
     isRunning: false,
@@ -25,6 +26,7 @@ let state = {
   },
   chartPeriod: 'week', // 'week' or 'month'
   filterPeriod: 'this-week', // 'all', 'this-week', 'this-month'
+  userFilter: 'all', // 'all' or 'mine'
   searchQuery: '',
   sortField: 'date',
   sortOrder: 'desc'
@@ -35,13 +37,59 @@ let workChartInstance = null;
 
 // --- Initialize App ---
 async function init() {
-  // Bind DOM Elements safely after DOM is loaded
   elements = {
     app: document.getElementById('app'),
     themeToggleBtn: document.getElementById('btn-theme-toggle'),
     themeIconMoon: document.getElementById('theme-icon-moon'),
     themeIconSun: document.getElementById('theme-icon-sun'),
+    themeIconMidnight: document.getElementById('theme-icon-midnight'),
+    themeDropdown: document.getElementById('theme-dropdown'),
+    themeOptDark: document.getElementById('theme-opt-dark'),
+    themeOptLight: document.getElementById('theme-opt-light'),
+    themeOptMidnight: document.getElementById('theme-opt-midnight'),
     
+    // Auth
+    userHeaderArea: document.getElementById('user-header-area'),
+    btnOpenLogin: document.getElementById('btn-open-login'),
+    userProfileBadge: document.getElementById('user-profile-badge'),
+    userAvatar: document.getElementById('user-avatar'),
+    userDisplayName: document.getElementById('user-display-name'),
+    btnLogout: document.getElementById('btn-logout'),
+
+    authModal: document.getElementById('auth-modal'),
+    authModalTitle: document.getElementById('auth-modal-title'),
+    authForm: document.getElementById('auth-form'),
+    authNameGroup: document.getElementById('auth-name-group'),
+    authName: document.getElementById('auth-name'),
+    authEmail: document.getElementById('auth-email'),
+    authPasswordGroup: document.getElementById('auth-password-group'),
+    authPassword: document.getElementById('auth-password'),
+    authConfirmGroup: document.getElementById('auth-confirm-group'),
+    authConfirmPassword: document.getElementById('auth-confirm-password'),
+    btnForgotPass: document.getElementById('btn-forgot-password'),
+    btnToggleAuthMode: document.getElementById('btn-toggle-auth-mode'),
+    btnAuthSubmit: document.getElementById('btn-auth-submit'),
+    btnAuthModalClose: document.getElementById('btn-auth-modal-close'),
+
+    // Team Grid
+    teamMembersGrid: document.getElementById('team-members-grid'),
+
+    // Lock Warning Modal
+    lockWarningModal: document.getElementById('lock-warning-modal'),
+    btnLockClose: document.getElementById('btn-lock-close'),
+    btnLockLogin: document.getElementById('btn-lock-login'),
+
+    // User Details View Modal
+    userDetailsModal: document.getElementById('user-details-modal'),
+    userModalAvatar: document.getElementById('user-modal-avatar'),
+    userModalName: document.getElementById('user-modal-name'),
+    userModalEmail: document.getElementById('user-modal-email'),
+    userModalTodayTotal: document.getElementById('user-modal-today-total'),
+    userModalYesterdayTotal: document.getElementById('user-modal-yesterday-total'),
+    userModalOverallTotal: document.getElementById('user-modal-overall-total'),
+    userModalTableBody: document.getElementById('user-modal-table-body'),
+    btnUserModalClose: document.getElementById('btn-user-modal-close'),
+
     // Timer Banner
     timerDisplay: document.getElementById('timer-display'),
     timerNote: document.getElementById('timer-note'),
@@ -81,6 +129,7 @@ async function init() {
     tableBody: document.getElementById('entries-table-body'),
     tableSearch: document.getElementById('table-search'),
     tableFilterPeriod: document.getElementById('table-filter-period'),
+    tableFilterUser: document.getElementById('table-filter-user'),
     tableFilteredTotal: document.getElementById('table-filtered-total'),
     emptyState: document.getElementById('empty-state'),
 
@@ -111,9 +160,11 @@ async function init() {
   };
 
   loadTheme();
+  renderUserHeader();
   setupDateDefault();
   setupEventListeners();
   await loadEntries();
+  await loadTeamMembers();
   updateUI();
 }
 
@@ -169,7 +220,6 @@ function formatTimeDigital(totalSec) {
   return `${h}:${m}:${s}`;
 }
 
-// --- Date Range Calculation ---
 function getWeekRange(dateObj = new Date()) {
   const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
   const day = d.getDay();
@@ -217,9 +267,71 @@ async function loadEntries() {
   }
 }
 
+async function loadTeamMembers() {
+  try {
+    const res = await fetch('/api/users');
+    if (res.ok) {
+      const result = await res.json();
+      if (result.success && Array.isArray(result.data)) {
+        state.teamUsers = result.data;
+      }
+    }
+  } catch (e) {
+    // Construct team users list from entries fallback
+    const userMap = new Map();
+    state.entries.forEach(e => {
+      const name = e.userName || 'Kullanıcı';
+      if (!userMap.has(name)) {
+        userMap.set(name, {
+          id: e.userId || name,
+          name: name,
+          email: e.userEmail || `${name.toLowerCase()}@saattakip.com`,
+          avatarColor: '#6366f1'
+        });
+      }
+    });
+
+    state.teamUsers = Array.from(userMap.values());
+  }
+
+  renderTeamMembers();
+}
+
+function renderTeamMembers() {
+  if (!elements.teamMembersGrid) return;
+
+  if (state.teamUsers.length === 0) {
+    // Show default demo cards for visual completeness
+    state.teamUsers = [
+      { id: '1', name: 'Elgün', email: 'elgun@saattakip.com', avatarColor: '#6366f1' },
+      { id: '2', name: 'Kız Arkadaşım', email: 'partner@saattakip.com', avatarColor: '#ec4899' }
+    ];
+  }
+
+  const todayStr = getTodayString();
+
+  elements.teamMembersGrid.innerHTML = state.teamUsers.map(user => {
+    const userEntries = state.entries.filter(e => e.userEmail === user.email || e.userName === user.name);
+    const todaySec = userEntries.filter(e => e.date === todayStr).reduce((sum, e) => sum + e.totalSeconds, 0);
+
+    return `
+      <div class="user-card-item" data-user-email="${user.email}" data-user-name="${escapeHtml(user.name)}">
+        <div class="user-avatar" style="background-color: ${user.avatarColor || '#6366f1'}">
+          ${escapeHtml(user.name.charAt(0).toUpperCase())}
+        </div>
+        <div class="user-card-info">
+          <h4>${escapeHtml(user.name)}</h4>
+          <span>Bugün: <strong>${formatDuration(todaySec)}</strong></span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 async function saveEntries(newOrUpdatedEntry = null, actionType = 'save') {
   localStorage.setItem('saattakip_entries', JSON.stringify(state.entries));
   updateUI();
+  await loadTeamMembers();
 
   if (state.useMongo && (newOrUpdatedEntry || actionType === 'clearAll')) {
     try {
@@ -250,27 +362,234 @@ async function saveEntries(newOrUpdatedEntry = null, actionType = 'save') {
   }
 }
 
-// --- Theme Handler ---
-function loadTheme() {
-  if (state.theme === 'light') {
-    document.body.classList.remove('dark-theme');
-    document.body.classList.add('light-theme');
-    if (elements.themeIconMoon) elements.themeIconMoon.classList.add('hidden');
-    if (elements.themeIconSun) elements.themeIconSun.classList.remove('hidden');
+// --- Auth & User State Handlers ---
+function renderUserHeader() {
+  if (!elements.btnOpenLogin) return;
+
+  if (state.currentUser) {
+    elements.btnOpenLogin.classList.add('hidden');
+    elements.userProfileBadge.classList.remove('hidden');
+    elements.userDisplayName.textContent = state.currentUser.name;
+    elements.userAvatar.textContent = state.currentUser.name.charAt(0).toUpperCase();
+    if (state.currentUser.avatarColor) {
+      elements.userAvatar.style.backgroundColor = state.currentUser.avatarColor;
+    }
   } else {
-    document.body.classList.remove('light-theme');
-    document.body.classList.add('dark-theme');
-    if (elements.themeIconMoon) elements.themeIconMoon.classList.remove('hidden');
-    if (elements.themeIconSun) elements.themeIconSun.classList.add('hidden');
+    elements.btnOpenLogin.classList.remove('hidden');
+    elements.userProfileBadge.classList.add('hidden');
   }
 }
 
-function toggleTheme() {
-  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  const name = elements.authName.value.trim();
+  const email = elements.authEmail.value.trim();
+  const password = elements.authPassword.value.trim();
+  const confirmPassword = elements.authConfirmPassword ? elements.authConfirmPassword.value.trim() : '';
+
+  // Email format regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showToast('Lütfen geçerli bir e-posta adresi girin (örn: isim@domain.com).', 'danger');
+    return;
+  }
+
+  if (state.authMode === 'register') {
+    if (!name || name.length < 2) {
+      showToast('İsim alanı en az 2 karakter olmalıdır.', 'danger');
+      return;
+    }
+    if (password !== confirmPassword) {
+      showToast('Şifre ve Şifre Tekrarı eşleşmiyor.', 'danger');
+      return;
+    }
+  }
+
+  try {
+    const actionName = state.authMode === 'forgot' ? 'reset_password' : state.authMode;
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: actionName,
+        name,
+        email,
+        password,
+        confirmPassword,
+        newPassword: password
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      if (state.authMode === 'forgot') {
+        showToast(data.message || 'Şifreniz sıfırlandı. Giriş yapabilirsiniz.', 'success');
+        setAuthMode('login');
+        return;
+      }
+
+      state.currentUser = data.user;
+      localStorage.setItem('saattakip_user', JSON.stringify(data.user));
+      renderUserHeader();
+      closeAuthModal();
+      showToast(`Hoş geldin ${data.user.name}!`, 'success');
+      if (typeof confetti === 'function') confetti({ particleCount: 50, spread: 60 });
+      await loadEntries();
+      await loadTeamMembers();
+      updateUI();
+    } else {
+      showToast(data.message || 'Bir hata oluştu.', 'danger');
+    }
+  } catch (err) {
+    // Local offline fallback
+    if (state.authMode === 'register' && password !== confirmPassword) {
+      showToast('Şifreler eşleşmiyor.', 'danger');
+      return;
+    }
+
+    state.currentUser = {
+      id: 'user_' + Date.now(),
+      name: name || email.split('@')[0],
+      email: email,
+      avatarColor: '#6366f1'
+    };
+    localStorage.setItem('saattakip_user', JSON.stringify(state.currentUser));
+    renderUserHeader();
+    closeAuthModal();
+    showToast(`Giriş yapıldı (${state.currentUser.name})`, 'success');
+    updateUI();
+  }
+}
+
+function handleLogout() {
+  state.currentUser = null;
+  localStorage.removeItem('saattakip_user');
+  renderUserHeader();
+  showToast('Çıkış yapıldı.', 'info');
+  updateUI();
+}
+
+function openAuthModal() {
+  if (elements.authModal) elements.authModal.classList.remove('hidden');
+}
+
+function closeAuthModal() {
+  if (elements.authModal) elements.authModal.classList.add('hidden');
+}
+
+function setAuthMode(mode) {
+  state.authMode = mode;
+  if (mode === 'register') {
+    elements.authModalTitle.textContent = 'Kayıt Ol';
+    elements.authNameGroup.classList.remove('hidden');
+    elements.authConfirmGroup.classList.remove('hidden');
+    elements.authPasswordGroup.classList.remove('hidden');
+    elements.btnAuthSubmit.textContent = 'Kayıt Ol ve Başla';
+    elements.btnToggleAuthMode.textContent = 'Zaten hesabınız var mı? Giriş Yapın';
+    if (elements.btnForgotPass) elements.btnForgotPass.classList.add('hidden');
+  } else if (mode === 'login') {
+    elements.authModalTitle.textContent = 'Giriş Yap';
+    elements.authNameGroup.classList.add('hidden');
+    elements.authConfirmGroup.classList.add('hidden');
+    elements.authPasswordGroup.classList.remove('hidden');
+    elements.btnAuthSubmit.textContent = 'Giriş Yap';
+    elements.btnToggleAuthMode.textContent = 'Hesabınız yok mu? Kaydolun';
+    if (elements.btnForgotPass) elements.btnForgotPass.classList.remove('hidden');
+  } else if (mode === 'forgot') {
+    elements.authModalTitle.textContent = 'Şifre Sıfırlama';
+    elements.authNameGroup.classList.add('hidden');
+    elements.authConfirmGroup.classList.add('hidden');
+    elements.authPasswordGroup.classList.remove('hidden');
+    elements.btnAuthSubmit.textContent = 'Yeni Şifreyi Kaydet';
+    elements.btnToggleAuthMode.textContent = 'Giriş Ekranına Dön';
+    if (elements.btnForgotPass) elements.btnForgotPass.classList.add('hidden');
+  }
+}
+
+function toggleAuthMode() {
+  if (state.authMode === 'login') {
+    setAuthMode('register');
+  } else {
+    setAuthMode('login');
+  }
+}
+
+// --- User Profile Details View Modal ---
+function openMemberDetails(userName, userEmail) {
+  if (!state.currentUser) {
+    // Show lock warning for unauthenticated guests!
+    if (elements.lockWarningModal) elements.lockWarningModal.classList.remove('hidden');
+    return;
+  }
+
+  const memberEntries = state.entries.filter(e => e.userEmail === userEmail || e.userName === userName);
+  const todayStr = getTodayString();
+  const yesterdayObj = new Date();
+  yesterdayObj.setDate(yesterdayObj.getDate() - 1);
+  const yesterdayStr = formatDateToYYYYMMDD(yesterdayObj);
+
+  const todaySec = memberEntries.filter(e => e.date === todayStr).reduce((sum, e) => sum + e.totalSeconds, 0);
+  const yesterdaySec = memberEntries.filter(e => e.date === yesterdayStr).reduce((sum, e) => sum + e.totalSeconds, 0);
+  const overallSec = memberEntries.reduce((sum, e) => sum + e.totalSeconds, 0);
+
+  if (elements.userModalName) elements.userModalName.textContent = userName;
+  if (elements.userModalEmail) elements.userModalEmail.textContent = userEmail || 'Ekip Üyesi';
+  if (elements.userModalAvatar) elements.userModalAvatar.textContent = userName.charAt(0).toUpperCase();
+  if (elements.userModalTodayTotal) elements.userModalTodayTotal.textContent = formatDuration(todaySec);
+  if (elements.userModalYesterdayTotal) elements.userModalYesterdayTotal.textContent = formatDuration(yesterdaySec);
+  if (elements.userModalOverallTotal) elements.userModalOverallTotal.textContent = formatDuration(overallSec);
+
+  if (elements.userModalTableBody) {
+    if (memberEntries.length === 0) {
+      elements.userModalTableBody.innerHTML = `<tr><td colspan="4" class="text-center" style="padding: 20px;">Henüz bu üyeye ait çalışma kaydı bulunmuyor.</td></tr>`;
+    } else {
+      elements.userModalTableBody.innerHTML = memberEntries.map(e => `
+        <tr>
+          <td><strong>${e.date}</strong> <span class="badge-day">${e.dayName}</span></td>
+          <td><span class="badge-category">${e.category}</span></td>
+          <td>${escapeHtml(e.note || '-')}</td>
+          <td class="text-right"><strong class="duration-text">${formatDurationDetailed(e.totalSeconds)}</strong></td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  if (elements.userDetailsModal) elements.userDetailsModal.classList.remove('hidden');
+}
+
+// --- 3 Themes Handler (Koyu, Aydınlık, Midnight Gece Mavisi) ---
+function loadTheme() {
+  document.body.classList.remove('dark-theme', 'light-theme', 'midnight-theme');
+  document.body.classList.add(`${state.theme}-theme`);
+
+  if (elements.themeIconMoon) elements.themeIconMoon.classList.add('hidden');
+  if (elements.themeIconSun) elements.themeIconSun.classList.add('hidden');
+  if (elements.themeIconMidnight) elements.themeIconMidnight.classList.add('hidden');
+
+  if (state.theme === 'light') {
+    if (elements.themeIconSun) elements.themeIconSun.classList.remove('hidden');
+  } else if (state.theme === 'midnight') {
+    if (elements.themeIconMidnight) elements.themeIconMidnight.classList.remove('hidden');
+  } else {
+    if (elements.themeIconMoon) elements.themeIconMoon.classList.remove('hidden');
+  }
+
+  // Update theme option active classes
+  [elements.themeOptDark, elements.themeOptLight, elements.themeOptMidnight].forEach(opt => {
+    if (opt) opt.classList.remove('active');
+  });
+  if (state.theme === 'dark' && elements.themeOptDark) elements.themeOptDark.classList.add('active');
+  if (state.theme === 'light' && elements.themeOptLight) elements.themeOptLight.classList.add('active');
+  if (state.theme === 'midnight' && elements.themeOptMidnight) elements.themeOptMidnight.classList.add('active');
+}
+
+function setTheme(themeName) {
+  state.theme = themeName;
   localStorage.setItem('saattakip_theme', state.theme);
   loadTheme();
   renderChart();
-  showToast(state.theme === 'dark' ? 'Koyu tema aktif' : 'Açık tema aktif', 'info');
+  if (elements.themeDropdown) elements.themeDropdown.classList.remove('show');
+  showToast(`${themeName === 'dark' ? 'Koyu Gece' : themeName === 'light' ? 'Aydınlık' : 'Gece Mavisi (Göz Yormayan)'} tema aktif.`, 'info');
 }
 
 // --- Default Date Form Setup ---
@@ -282,7 +601,60 @@ function setupDateDefault() {
 
 // --- Event Listeners ---
 function setupEventListeners() {
-  if (elements.themeToggleBtn) elements.themeToggleBtn.addEventListener('click', toggleTheme);
+  // Theme dropdown & selection
+  if (elements.themeToggleBtn) {
+    elements.themeToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (elements.themeDropdown) elements.themeDropdown.classList.toggle('show');
+    });
+  }
+
+  if (elements.themeOptDark) elements.themeOptDark.addEventListener('click', () => setTheme('dark'));
+  if (elements.themeOptLight) elements.themeOptLight.addEventListener('click', () => setTheme('light'));
+  if (elements.themeOptMidnight) elements.themeOptMidnight.addEventListener('click', () => setTheme('midnight'));
+
+  // Password Eye Toggles
+  document.querySelectorAll('.btn-eye-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.for;
+      const input = document.getElementById(targetId);
+      if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+      }
+    });
+  });
+
+  // Auth Event Listeners
+  if (elements.btnOpenLogin) elements.btnOpenLogin.addEventListener('click', openAuthModal);
+  if (elements.btnAuthModalClose) elements.btnAuthModalClose.addEventListener('click', closeAuthModal);
+  if (elements.btnToggleAuthMode) elements.btnToggleAuthMode.addEventListener('click', toggleAuthMode);
+  if (elements.btnForgotPass) elements.btnForgotPass.addEventListener('click', () => setAuthMode('forgot'));
+  if (elements.authForm) elements.authForm.addEventListener('submit', handleAuthSubmit);
+  if (elements.btnLogout) elements.btnLogout.addEventListener('click', handleLogout);
+
+  // Lock Modal Listeners
+  if (elements.btnLockClose) elements.btnLockClose.addEventListener('click', () => elements.lockWarningModal.classList.add('hidden'));
+  if (elements.btnLockLogin) {
+    elements.btnLockLogin.addEventListener('click', () => {
+      elements.lockWarningModal.classList.add('hidden');
+      openAuthModal();
+    });
+  }
+
+  // User Details Modal Close
+  if (elements.btnUserModalClose) elements.btnUserModalClose.addEventListener('click', () => elements.userDetailsModal.classList.add('hidden'));
+
+  // Team Member Card Clicks
+  if (elements.teamMembersGrid) {
+    elements.teamMembersGrid.addEventListener('click', (e) => {
+      const userCard = e.target.closest('.user-card-item');
+      if (userCard) {
+        const email = userCard.dataset.userEmail;
+        const name = userCard.dataset.userName;
+        openMemberDetails(name, email);
+      }
+    });
+  }
 
   if (elements.entryDate) {
     elements.entryDate.addEventListener('change', (e) => {
@@ -358,6 +730,13 @@ function setupEventListeners() {
     });
   }
 
+  if (elements.tableFilterUser) {
+    elements.tableFilterUser.addEventListener('change', (e) => {
+      state.userFilter = e.target.value;
+      renderTable();
+    });
+  }
+
   document.querySelectorAll('th.sortable').forEach(th => {
     th.addEventListener('click', () => {
       const field = th.dataset.sort;
@@ -401,6 +780,11 @@ function setupEventListeners() {
         elements.dataDropdown.classList.remove('show');
       }
     }
+    if (elements.themeToggleBtn && elements.themeDropdown) {
+      if (!elements.themeToggleBtn.contains(e.target) && !elements.themeDropdown.contains(e.target)) {
+        elements.themeDropdown.classList.remove('show');
+      }
+    }
   });
 
   if (elements.btnQuickSample) {
@@ -434,6 +818,9 @@ function toggleTimer() {
       
       const newEntry = {
         id: 'entry_' + Date.now(),
+        userId: state.currentUser ? state.currentUser.id : null,
+        userName: state.currentUser ? state.currentUser.name : 'Anonim',
+        userEmail: state.currentUser ? state.currentUser.email : null,
         date: getTodayString(),
         dayName: getDayNameTR(getTodayString()),
         hours: h,
@@ -506,6 +893,9 @@ function handleAddEntry() {
 
   const newEntry = {
     id: 'entry_' + Date.now(),
+    userId: state.currentUser ? state.currentUser.id : null,
+    userName: state.currentUser ? state.currentUser.name : 'Anonim',
+    userEmail: state.currentUser ? state.currentUser.email : null,
     date: dateStr,
     dayName: getDayNameTR(dateStr),
     hours,
@@ -538,7 +928,7 @@ function updateUI() {
   renderTable();
 }
 
-// --- Calculate Statistics (Strict Reset When Empty) ---
+// --- Calculate Statistics ---
 function calculateStats() {
   if (!elements.statWeeklyTotal) return;
 
@@ -651,13 +1041,18 @@ function renderChart() {
     }
   }
 
-  const isDark = state.theme === 'dark';
-  const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
-  const textColor = isDark ? '#9ca3af' : '#475569';
+  const isLight = state.theme === 'light';
+  const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)';
+  const textColor = isLight ? '#475569' : '#9ca3af';
 
   const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-  gradient.addColorStop(0, 'rgba(99, 102, 241, 0.85)');
-  gradient.addColorStop(1, 'rgba(6, 182, 212, 0.2)');
+  if (state.theme === 'midnight') {
+    gradient.addColorStop(0, 'rgba(14, 165, 233, 0.85)');
+    gradient.addColorStop(1, 'rgba(20, 184, 166, 0.2)');
+  } else {
+    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.85)');
+    gradient.addColorStop(1, 'rgba(6, 182, 212, 0.2)');
+  }
 
   if (workChartInstance) {
     workChartInstance.destroy();
@@ -671,7 +1066,7 @@ function renderChart() {
         label: 'Çalışma Süresi (Saat)',
         data: dataHours,
         backgroundColor: gradient,
-        borderColor: '#6366f1',
+        borderColor: state.theme === 'midnight' ? '#0ea5e9' : '#6366f1',
         borderWidth: 1,
         borderRadius: 5,
         hoverBackgroundColor: '#06b6d4'
@@ -722,6 +1117,12 @@ function renderTable() {
   let filtered = state.entries.filter(entry => {
     const entryDate = parseEntryDate(entry.date);
 
+    if (state.userFilter === 'mine' && state.currentUser) {
+      if (entry.userEmail !== state.currentUser.email && entry.userId !== state.currentUser.id) {
+        return false;
+      }
+    }
+
     if (state.filterPeriod === 'this-week') {
       if (entryDate < weekRange.start || entryDate > weekRange.end) return false;
     } else if (state.filterPeriod === 'this-month') {
@@ -729,10 +1130,11 @@ function renderTable() {
     }
 
     if (state.searchQuery) {
-      const matchNote = entry.note.toLowerCase().includes(state.searchQuery);
-      const matchCat = entry.category.toLowerCase().includes(state.searchQuery);
-      const matchDay = entry.dayName.toLowerCase().includes(state.searchQuery);
-      if (!matchNote && !matchCat && !matchDay) return false;
+      const matchNote = (entry.note || '').toLowerCase().includes(state.searchQuery);
+      const matchCat = (entry.category || '').toLowerCase().includes(state.searchQuery);
+      const matchDay = (entry.dayName || '').toLowerCase().includes(state.searchQuery);
+      const matchUser = (entry.userName || '').toLowerCase().includes(state.searchQuery);
+      if (!matchNote && !matchCat && !matchDay && !matchUser) return false;
     }
 
     return true;
@@ -768,6 +1170,9 @@ function renderTable() {
       <td>
         <strong>${entry.date}</strong>
         <span class="badge-day">${entry.dayName}</span>
+      </td>
+      <td>
+        <span class="user-tag">👤 ${escapeHtml(entry.userName || 'Ortak')}</span>
       </td>
       <td>
         <span class="badge-category">${entry.category}</span>
@@ -868,10 +1273,10 @@ function exportCSV() {
   }
 
   let csvContent = 'data:text/csv;charset=utf-8,\uFEFF';
-  csvContent += 'Tarih;Gün;Saat;Dakika;Saniye;Toplam Saniye;Kategori;Not\n';
+  csvContent += 'Tarih;Gün;Kullanıcı;Saat;Dakika;Saniye;Toplam Saniye;Kategori;Not\n';
 
   state.entries.forEach(e => {
-    csvContent += `"${e.date}";"${e.dayName}";${e.hours};${e.minutes};${e.seconds};${e.totalSeconds};"${e.category}";"${e.note || ''}"\n`;
+    csvContent += `"${e.date}";"${e.dayName}";"${e.userName || 'Anonim'}";${e.hours};${e.minutes};${e.seconds};${e.totalSeconds};"${e.category}";"${e.note || ''}"\n`;
   });
 
   const encodedUri = encodeURI(csvContent);
@@ -943,6 +1348,9 @@ function loadSampleData() {
 
     sampleEntries.push({
       id: 'sample_' + i,
+      userId: state.currentUser ? state.currentUser.id : null,
+      userName: state.currentUser ? state.currentUser.name : (i % 2 === 0 ? 'Elgün' : 'Kız Arkadaşım'),
+      userEmail: state.currentUser ? state.currentUser.email : null,
       date: dateStr,
       dayName: getDayNameTR(dateStr),
       hours: h,
