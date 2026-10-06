@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SaatTakip - Çalışma Saati Takip Uygulaması</title>
+  <meta name="description" content="Günlük çalışma saatlerinizi kolayca kaydedin, haftalık ve aylık ortalamalarınızı görün." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body class="dark-theme">
+
+  <!-- Main App Container -->
+  <div id="app">
+    
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="header-container">
+        <div class="brand">
+          <div class="brand-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="brand-text">
+            <h1>SaatTakip</h1>
+            <span class="brand-badge">Çalışma Takibi</span>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div class="dropdown">
+            <button id="btn-data-menu" class="btn btn-secondary btn-header-action" title="Veri & Ayarlar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <span class="header-btn-text">Veri & Ayarlar</span>
+            </button>
+            <div id="data-dropdown" class="dropdown-menu">
+              <button id="btn-quick-sample">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                Örnek Veri Yükle
+              </button>
+              <div class="dropdown-divider"></div>
+              <button id="btn-export-json">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                JSON Dışa Aktar
+              </button>
+              <button id="btn-export-csv">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                CSV (Excel) Dışa Aktar
+              </button>
+              <label for="import-file-input" class="dropdown-item-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                JSON İçe Aktar
+                <input type="file" id="import-file-input" accept=".json" style="display: none;" />
+              </label>
+              <div class="dropdown-divider"></div>
+              <button id="btn-clear-all" class="text-danger">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                Tüm Verileri Sil
+              </button>
+            </div>
+          </div>
+
+          <button id="btn-theme-toggle" class="btn btn-icon" title="Tema Değiştir">
+            <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            <svg id="theme-icon-sun" class="hidden" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content container">
+
+      <!-- Hero Banner / Quick Live Timer -->
+      <section class="timer-banner-card">
+        <div class="timer-banner-header">
+          <div class="title-with-subtitle">
+            <h2>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Canlı Kronometre
+            </h2>
+            <p class="subtitle">Çalışmaya başladığınızda başlatın, bitirdiğinizde otomatik kaydedin.</p>
+          </div>
+          <div class="timer-display" id="timer-display">00:00:00</div>
+        </div>
+
+        <div class="timer-banner-controls">
+          <input type="text" id="timer-note" class="form-input" placeholder="Şu an ne üzerinde çalışıyorsunuz? (Not...)" />
+          <select id="timer-category" class="form-select">
+            <option value="Genel Çalışma">💼 Genel Çalışma</option>
+            <option value="Yazılım / Proje">💻 Yazılım / Proje</option>
+            <option value="Toplantı">🗣️ Toplantı</option>
+            <option value="Tasarım">🎨 Tasarım</option>
+            <option value="Araştırma">📚 Araştırma</option>
+          </select>
+          <div class="timer-btn-group">
+            <button id="btn-timer-toggle" class="btn btn-primary">
+              <svg id="timer-btn-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+              <span id="timer-btn-text">Başlat</span>
+            </button>
+            <button id="btn-timer-reset" class="btn btn-secondary" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              <span>Sıfırla</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stats Grid Cards -->
+      <section class="stats-grid">
+        <!-- Haftalık İstatistik -->
+        <div class="stat-card stat-weekly">
+          <div class="stat-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Bu Haftalık Toplam</span>
+            <div class="stat-value" id="stat-weekly-total">0s 0dk</div>
+            <div class="stat-sub">
+              <span>Haftalık Ortalama: <strong id="stat-weekly-avg">0s 0dk / gün</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aylık İstatistik -->
+        <div class="stat-card stat-monthly">
+          <div class="stat-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Bu Aylık Toplam</span>
+            <div class="stat-value" id="stat-monthly-total">0s 0dk</div>
+            <div class="stat-sub">
+              <span>Aylık Ortalama: <strong id="stat-monthly-avg">0s 0dk / gün</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Genel Ortalama -->
+        <div class="stat-card stat-daily">
+          <div class="stat-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Günlük Ortalama</span>
+            <div class="stat-value" id="stat-overall-daily-avg">0s 0dk</div>
+            <div class="stat-sub">
+              <span>Toplam Kayıtlı Gün: <strong id="stat-total-days">0 gün</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hedef Tamamlama -->
+        <div class="stat-card stat-goal">
+          <div class="stat-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Haftalık 40s Hedefi</span>
+            <div class="stat-value" id="stat-goal-percent">%0</div>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="goal-progress-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Layout: Form + Chart Section -->
+      <div class="main-grid">
+        
+        <!-- Left: Manual Entry Form -->
+        <section class="card form-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="16"/><line x1="8" x2="16" y1="12" y2="12"/></svg>
+                Manuel Süre Ekle
+              </h3>
+              <span class="card-subtitle">Çalıştığınız süreyi manuel girin</span>
+            </div>
+          </div>
+          
+          <form id="add-time-form" class="entry-form">
+            <div class="form-group">
+              <label for="entry-date">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                Tarih
+              </label>
+              <div class="input-with-day">
+                <input type="date" id="entry-date" class="form-input" required />
+                <span id="entry-day-badge" class="day-badge">Pazartesi</span>
+              </div>
+            </div>
+
+            <div class="duration-row-wrapper">
+              <div class="form-row duration-row">
+                <div class="form-group">
+                  <label for="entry-hours">Saat</label>
+                  <input type="number" id="entry-hours" class="form-input text-center" min="0" max="24" value="0" placeholder="0" />
+                </div>
+                <div class="form-group">
+                  <label for="entry-minutes">Dakika</label>
+                  <input type="number" id="entry-minutes" class="form-input text-center" min="0" max="59" value="0" placeholder="0" />
+                </div>
+                <div class="form-group">
+                  <label for="entry-seconds">Saniye</label>
+                  <input type="number" id="entry-seconds" class="form-input text-center" min="0" max="59" value="0" placeholder="0" />
+                </div>
+              </div>
+              <span class="field-subnote">* Saniye girilmesi isteğe bağlıdır.</span>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="quick-presets">
+              <span class="preset-title">Hızlı:</span>
+              <button type="button" class="btn-preset" data-h="8" data-m="0">8 Sa (Tam)</button>
+              <button type="button" class="btn-preset" data-h="4" data-m="0">4 Sa (Yarım)</button>
+              <button type="button" class="btn-preset" data-h="1" data-m="0">+1 Sa</button>
+              <button type="button" class="btn-preset" data-h="0" data-m="30">+30 Dk</button>
+            </div>
+
+            <div class="form-group">
+              <label for="entry-category">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><circle cx="7" cy="7" r=".5" fill="currentColor"/></svg>
+                Kategori
+              </label>
+              <select id="entry-category" class="form-select">
+                <option value="Genel Çalışma">💼 Genel Çalışma</option>
+                <option value="Yazılım / Proje">💻 Yazılım / Proje</option>
+                <option value="Toplantı">🗣️ Toplantı</option>
+                <option value="Tasarım">🎨 Tasarım</option>
+                <option value="Araştırma">📚 Araştırma</option>
+                <option value="Diğer">📌 Diğer</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="entry-note">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>
+                Çalışma Notu
+              </label>
+              <input type="text" id="entry-note" class="form-input" placeholder="Örn: Proje kodlaması yapıldı..." />
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Çalışma Kaydını Ekle</span>
+            </button>
+          </form>
+        </section>
+
+        <!-- Right: Interactive Visual Chart -->
+        <section class="card chart-card">
+          <div class="card-header">
+            <div>
+              <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
+                Çalışma Grafiği
+              </h3>
+              <span class="card-subtitle">Günlük çalışma saatlerinin dağılımı</span>
+            </div>
+            <div class="chart-tab-group">
+              <button id="chart-tab-week" class="btn-chart-tab active">Bu Hafta</button>
+              <button id="chart-tab-month" class="btn-chart-tab">Bu Ay</button>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="workChart"></canvas>
+          </div>
+        </section>
+      </div>
+
+      <!-- Data Table Section -->
+      <section class="card table-card">
+        <div class="card-header table-header-flex">
+          <div>
+            <h3>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+              Çalışma Kayıtları Geçmişi
+            </h3>
+            <span class="card-subtitle">Tüm eklenen günlük çalışma saatleri ve detaylar</span>
+          </div>
+
+          <!-- Filters -->
+          <div class="table-filter-bar">
+            <div class="search-box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+              <input type="text" id="table-search" placeholder="Not veya kategori ara..." />
+            </div>
+            <select id="table-filter-period" class="form-select form-select-sm">
+              <option value="all">Tüm Zamanlar</option>
+              <option value="this-week" selected>Bu Hafta</option>
+              <option value="this-month">Bu Ay</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="sortable" data-sort="date">
+                  Tarih & Gün <span class="sort-icon">⇅</span>
+                </th>
+                <th>Kategori</th>
+                <th>Açıklama / Not</th>
+                <th class="sortable text-right" data-sort="duration">
+                  Süre <span class="sort-icon">⇅</span>
+                </th>
+                <th class="text-center">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody id="entries-table-body">
+              <!-- Dynamic rows via JavaScript -->
+            </tbody>
+            <tfoot>
+              <tr class="table-summary-row">
+                <td colspan="3"><strong>Filtrelenen Toplam Süre:</strong></td>
+                <td class="text-right"><strong id="table-filtered-total">0s 0dk 0sn</strong></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Empty state placeholder -->
+        <div id="empty-state" class="empty-state hidden">
+          <div class="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h4>Henüz çalışma kaydı bulunmuyor</h4>
+          <p>Yukarıdaki formdan manuel süre ekleyebilir veya canlı kronometreyi kullanabilirsiniz.</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="container footer-content">
+        <p>SaatTakip &copy; 2026 - Kolay ve Hızlı Çalışma Saati Takip Uygulaması</p>
+        <p class="footer-hint">Vercel Uyumlu &bull; Yerel Veri Depolama (LocalStorage)</p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Edit Entry Modal -->
+  <div id="edit-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Kaydı Düzenle</h3>
+        <button id="btn-modal-close" class="btn-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="edit-form">
+        <input type="hidden" id="edit-id" />
+        <div class="form-group">
+          <label for="edit-date">Tarih</label>
+          <input type="date" id="edit-date" class="form-input" required />
+        </div>
+        <div class="form-row duration-row">
+          <div class="form-group">
+            <label for="edit-hours">Saat</label>
+            <input type="number" id="edit-hours" class="form-input text-center" min="0" max="24" required />
+          </div>
+          <div class="form-group">
+            <label for="edit-minutes">Dakika</label>
+            <input type="number" id="edit-minutes" class="form-input text-center" min="0" max="59" required />
+          </div>
+          <div class="form-group">
+            <label for="edit-seconds">Saniye</label>
+            <input type="number" id="edit-seconds" class="form-input text-center" min="0" max="59" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-category">Kategori</label>
+          <select id="edit-category" class="form-select">
+            <option value="Genel Çalışma">💼 Genel Çalışma</option>
+            <option value="Yazılım / Proje">💻 Yazılım / Proje</option>
+            <option value="Toplantı">🗣️ Toplantı</option>
+            <option value="Tasarım">🎨 Tasarım</option>
+            <option value="Araştırma">📚 Araştırma</option>
+            <option value="Diğer">📌 Diğer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-note">Not</label>
+          <input type="text" id="edit-note" class="form-input" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="btn-modal-cancel" class="btn btn-secondary">İptal</button>
+          <button type="submit" class="btn btn-primary">Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>
